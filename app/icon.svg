@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="kgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="0.55" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#e11d48"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="16" fill="url(#kgrad)"/>
+  <!-- open book -->
+  <path d="M32 20 C28.5 16.8 23.5 15.5 18 15.5 V44.5 C23.5 44.5 28.5 45.8 32 49 C35.5 45.8 40.5 44.5 46 44.5 V15.5 C40.5 15.5 35.5 16.8 32 20 Z"
+    fill="#ffffff" fill-opacity="0.14" stroke="#ffffff" stroke-width="3.6" stroke-linejoin="round"/>
+  <path d="M32 20 V49" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" opacity="0.9"/>
+  <!-- kettle-stitch dashes -->
+  <path d="M20.5 37.5 C27 34.2 37 34.2 43.5 37.5" fill="none" stroke="#ffffff"
+    stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.5 4.6"/>
+</svg>
