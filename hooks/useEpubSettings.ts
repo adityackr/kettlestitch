@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useReaderStore } from "@/store/readerStore";
-import { applyEpubTheme, themeSnapshot, type EpubRendition } from "@/lib/epub";
+import { useHighlightStore } from "@/store/highlightStore";
+import { applyEpubTheme, repaintHighlights, themeSnapshot, type EpubRendition } from "@/lib/epub";
 
 /**
  * useEpubSettings — live-applies typography / theme / layout to a running
@@ -38,16 +39,24 @@ export function useEpubSettings(renditionRef: React.RefObject<EpubRendition | nu
     const snap = themeSnapshot(useSettingsStore.getState());
     applyEpubTheme(rendition, snap);
 
-    // Debounce the expensive part (full pagination re-render).
+    // Debounce the expensive part (pagination re-render + repaint).
     if (themeTimer.current) clearTimeout(themeTimer.current);
     themeTimer.current = setTimeout(() => {
       themeTimer.current = null;
       // Rendition replaced (book switch) while debouncing? Bail out.
       if (renditionRef.current !== rendition) return;
-      try {
-        const cfi = useReaderStore.getState().currentCfi;
-        if (cfi) void rendition.display(cfi).catch(() => {});
-      } catch { /* noop */ }
+      void (async () => {
+        try {
+          const cfi = useReaderStore.getState().currentCfi;
+          if (cfi) await rendition.display(cfi).catch(() => {});
+        } catch { /* noop */ }
+        // display() on the shown section only scrolls — the SVG overlay
+        // would keep stale rects over reflowed text. Repaint marks so
+        // they re-measure against the current layout.
+        try {
+          await repaintHighlights(rendition, useHighlightStore.getState().items);
+        } catch { /* noop */ }
+      })();
     }, 220);
 
     return () => {
@@ -68,5 +77,8 @@ export function useEpubSettings(renditionRef: React.RefObject<EpubRendition | nu
     try {
       rendition.flow(flow === "scrolled" ? "scrolled" : "paginated");
     } catch { /* noop */ }
+    // Relayout moves text under the overlay — repaint marks likewise.
+    // Discrete user action (not per-page-turn), so the cost is fine.
+    void repaintHighlights(rendition, useHighlightStore.getState().items).catch(() => {});
   }, [spread, flow, renditionRef]);
 }

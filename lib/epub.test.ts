@@ -7,6 +7,7 @@ import {
   flattenToc,
   normalizeToc,
   prettyFileName,
+  repaintHighlights,
   spineItems,
   themeSnapshot,
 } from "./epub";
@@ -111,5 +112,47 @@ describe("spineItems", () => {
   test("reads runtime spine items, tolerates absence", () => {
     expect(spineItems({ spine: { items: [{ href: "a.xhtml" }] } } as never)).toEqual([{ href: "a.xhtml" }]);
     expect(spineItems({ spine: {} } as never)).toEqual([]);
+  });
+});
+
+describe("repaintHighlights", () => {
+  test("removes every mark before re-adding (no stale rects, no duplicates)", async () => {
+    const calls: string[] = [];
+    const fakeRendition = {
+      annotations: {
+        remove: (cfiRange: string) => {
+          calls.push(`remove:${cfiRange}`);
+        },
+        highlight: async (cfiRange: string) => {
+          calls.push(`highlight:${cfiRange}`);
+        },
+      },
+    };
+    await repaintHighlights(fakeRendition as never, [
+      { cfiRange: "cfi-a", color: "yellow" },
+      { cfiRange: "cfi-b", color: "green" },
+    ]);
+    expect(calls).toEqual([
+      "remove:cfi-a",
+      "remove:cfi-b",
+      "highlight:cfi-a",
+      "highlight:cfi-b",
+    ]);
+  });
+
+  test("empty list is a no-op", async () => {
+    const calls: string[] = [];
+    const fakeRendition = {
+      annotations: {
+        remove: (cfiRange: string) => {
+          calls.push(`remove:${cfiRange}`);
+        },
+        highlight: async (cfiRange: string) => {
+          calls.push(`highlight:${cfiRange}`);
+        },
+      },
+    };
+    await repaintHighlights(fakeRendition as never, []);
+    expect(calls).toEqual([]);
   });
 });

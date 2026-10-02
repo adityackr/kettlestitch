@@ -263,6 +263,30 @@ export async function restoreHighlights(
   }
 }
 
+/**
+ * Force highlight marks back onto the text they belong to.
+ *
+ * Why this exists: highlight marks live in an SVG overlay whose rects
+ * are measured at paint time. When typography/layout changes, epub.js
+ * `display()` on the already-shown section only scrolls (see
+ * managers/default `display()`: "View is already shown…") instead of
+ * reloading — so the overlay keeps stale rects over reflowed text and
+ * marks appear on the wrong words. Removing + re-adding re-measures
+ * every mark against the current layout. Idempotent and duplicate-free
+ * (`remove` detaches before `highlight` re-attaches).
+ */
+export async function repaintHighlights(
+  rendition: EpubRendition,
+  highlights: Array<{ cfiRange: string; color: string }>,
+): Promise<void> {
+  for (const h of highlights) {
+    try {
+      rendition.annotations.remove(h.cfiRange, "highlight");
+    } catch { /* mark may never have painted */ }
+  }
+  await restoreHighlights(rendition, highlights);
+}
+
 /** Extract readable text for a CFI range (bookmark snippets). */
 export async function textForCfi(book: EpubBook, cfi: string, max = 160): Promise<string> {
   try {
